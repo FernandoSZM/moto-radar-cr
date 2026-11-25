@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="es-CR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MotoRadar CR</title>
+  <style>
+    :root {
+      font: 16px/1.5 system-ui, sans-serif;
+      color: #18291f;
+      background: #f3f6f1;
+      --verde: #14573e;
+      --borde: #cdd8cf;
+      --secundario: #486052;
+      --rojo: #992f2b;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    header { background: #123628; color: white; padding: 2.5rem 1rem; }
+    header > div, main { width: min(70rem, 100%); margin: auto; }
+    h1, h2, h3, p { margin: 0; overflow-wrap: anywhere; }
+    h1 { font-size: clamp(2rem, 5vw, 3rem); letter-spacing: -.045em; }
+    h2 { font-size: 1.4rem; }
+    h3 { font-size: 1.2rem; }
+    main { padding: 1.5rem 1rem 3rem; }
+    .panel, .moto {
+      background: white;
+      border: 1px solid var(--borde);
+      border-radius: 1rem;
+      padding: clamp(1rem, 3vw, 1.5rem);
+    }
+    .campos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+      gap: .8rem;
+      margin: 1rem 0;
+    }
+    fieldset { margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+    label { display: grid; gap: .25rem; font-weight: 600; }
+    input, select, button { font: inherit; border-radius: .5rem; min-height: 2.75rem; }
+    input, select { width: 100%; padding: .5rem .65rem; border: 1px solid #869b8b; }
+    button {
+      border: 1px solid var(--borde);
+      padding: .5rem .85rem;
+      background: white;
+      color: var(--verde);
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .principal { background: var(--verde); border-color: var(--verde); color: white; }
+    button:disabled { opacity: .55; cursor: wait; }
+    button:not(:disabled):hover { box-shadow: inset 0 0 0 1px currentColor; }
+    :focus-visible { outline: 3px solid #27845c; outline-offset: 3px; }
+    .encabezado-lista, .acciones, .historial li {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      flex-wrap: wrap;
+    }
+    .encabezado-lista { justify-content: space-between; margin: 1.5rem 0 .75rem; }
+    #motos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 23rem), 1fr));
+      align-items: start;
+      gap: 1rem;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .datos, .cambio, #estado { color: var(--secundario); }
+    .precio { font-size: 1.65rem; font-weight: 750; margin-top: .6rem; }
+    .bajo { color: var(--verde); }
+    .eliminar, .error, .subio { color: var(--rojo); }
+    .precio, .historial { font-variant-numeric: tabular-nums; }
+    .cambio { font-size: .95rem; }
+    .acciones { margin-top: 1rem; }
+    .editar { margin-top: 1rem; }
+    .anuncio { color: var(--verde); font-weight: 650; }
+    .enlace-campo { grid-column: 1 / -1; }
+    .filtros {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: .75rem;
+      margin-bottom: 1rem;
+    }
+    .filtros label { flex: 1 1 12rem; }
+    details { border-top: 1px solid var(--borde); margin-top: 1rem; padding-top: .75rem; }
+    summary { color: var(--verde); cursor: pointer; font-weight: 650; }
+    .historial { padding: 0; margin: .5rem 0 0; list-style: none; }
+    .historial li { justify-content: space-between; padding: .45rem 0; }
+    .historial li + li { border-top: 1px solid var(--borde); }
+    #estado, #error { margin-bottom: .75rem; }
+    #estado:empty, #error:empty { margin: 0; }
+    #error:not(:empty) { background: #fcece9; padding: .75rem 1rem; border-radius: .5rem; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header><div><h1>MotoRadar CR</h1></div></header>
+  <main>
+    <section class="panel" aria-labelledby="titulo-alta">
+      <h2 id="titulo-alta">Agregar moto</h2>
+      <form id="alta">
+        <fieldset id="campos-alta" aria-labelledby="titulo-alta">
+          <div class="campos">
+            <label>Marca<input name="marca" required></label>
+            <label>Modelo<input name="modelo" required></label>
+            <label>Año<input name="anio" type="number" min="1" step="1" required></label>
+            <label>Kilometraje (km)<input name="kilometraje" type="number" min="0" step="1" required></label>
+            <label>Precio (₡)<input name="precio_crc" type="number" min="1" step="1" required></label>
+            <label class="enlace-campo">Enlace al anuncio (opcional)<input name="anuncio_url" type="url" placeholder="https://…"></label>
+          </div>
+          <button class="principal" type="submit">Guardar moto</button>
+        </fieldset>
+      </form>
+    </section>
+
+    <section aria-labelledby="titulo-motos">
+      <div class="encabezado-lista">
+        <h2 id="titulo-motos" tabindex="-1">Motos guardadas</h2>
+        <button id="recargar" type="button">Actualizar lista</button>
+      </div>
+      <form id="filtros">
+        <fieldset id="campos-filtros" class="filtros" aria-label="Filtrar y ordenar motos">
+          <label>Presupuesto máximo (₡)<input name="precio_max" type="number" min="0" step="1"></label>
+          <label>Ordenar por
+            <select name="orden">
+              <option value="">Orden de registro</option>
+              <option value="precio_crc">Menor precio</option>
+              <option value="kilometraje">Menor kilometraje</option>
+            </select>
+          </label>
+          <button type="submit">Aplicar</button>
+        </fieldset>
+      </form>
+      <p id="error" class="error" role="alert" tabindex="-1"></p>
+      <p id="estado" role="status">Cargando motos…</p>
+      <fieldset id="controles-motos" aria-labelledby="titulo-motos">
+        <ul id="motos"></ul>
+      </fieldset>
+    </section>
+  </main>
+
+  <template id="plantilla-moto">
+    <li class="moto">
+      <h3></h3>
+      <p class="datos"></p>
+      <p class="precio"></p>
+      <p class="cambio" role="status">Comparando precios…</p>
+      <div class="acciones">
+        <a class="anuncio" target="_blank" rel="noopener noreferrer" hidden>Ver anuncio</a>
+        <button class="abrir-edicion" type="button" aria-expanded="false">Editar moto</button>
+        <button class="eliminar" type="button">Eliminar</button>
+      </div>
+      <form class="editar" hidden>
+        <div class="acciones">
+          <button class="principal" type="submit">Guardar cambios</button>
+          <button class="cancelar" type="button">Cancelar</button>
+        </div>
+      </form>
+      <details>
+        <summary>Historial de precios</summary>
+        <ol class="historial"></ol>
+      </details>
+    </li>
+  </template>
+
+  <script>
+    const alta = document.querySelector("#alta");
+    const camposAlta = document.querySelector("#campos-alta");
+    const filtros = document.querySelector("#filtros");
+    const camposFiltros = document.querySelector("#campos-filtros");
+    let presupuesto = "";
+    let orden = "";
+    const lista = document.querySelector("#motos");
+    const controlesMotos = document.querySelector("#controles-motos");
+    const plantilla = document.querySelector("#plantilla-moto");
+    const tituloMotos = document.querySelector("#titulo-motos");
+    const estado = document.querySelector("#estado");
+    const avisoError = document.querySelector("#error");
+    const recargar = document.querySelector("#recargar");
+    const colones = new Intl.NumberFormat("es-CR", { style: "currency", currency: "CRC", maximumFractionDigits: 0 });
+    const numeros = new Intl.NumberFormat("es-CR");
+    const fechas = new Intl.DateTimeFormat("es-CR", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "America/Costa_Rica",
+    });
+
+    async function solicitar(ruta, metodo = "GET", datos) {
+      const opciones = { method: metodo, cache: "no-store" };
+      if (datos !== undefined) {
+        opciones.headers = { "Content-Type": "application/json" };
+        opciones.body = JSON.stringify(datos);
+      }
+
+      let respuesta;
+      try {
+        respuesta = await fetch(ruta, opciones);
+      } catch {
+        throw new Error("No se pudo conectar con la API. Revisá que el servidor esté activo.");
+      }
+      if (!respuesta.ok) {
+        const cuerpo = await respuesta.json().catch(() => null);
+        throw new Error(cuerpo?.error || `La API respondió con HTTP ${respuesta.status}.`);
+      }
+      if (metodo === "GET") return respuesta.json();
+    }
+
+    async function mostrarHistorial(moto, tarjeta) {
+      const cambio = tarjeta.querySelector(".cambio");
+      const historial = tarjeta.querySelector(".historial");
+
+      try {
+        const registros = await solicitar(`/motos/${moto.id}/precios`);
+        if (registros.length === 0) {
+          cambio.textContent = "Todavía no hay registros de precio.";
+          return;
+        }
+
+        const diferencia = moto.precio_crc - registros[0].precio_crc;
+        if (diferencia === 0) {
+          cambio.textContent = "Sin cambios desde que la guardaste";
+        } else {
+          const bajo = diferencia < 0;
+          cambio.classList.add(bajo ? "bajo" : "subio");
+          cambio.textContent =
+            `${bajo ? "Bajó" : "Subió"} ${colones.format(Math.abs(diferencia))} desde que la guardaste`;
+        }
+
+        for (const [indice, registro] of registros.entries()) {
+          const fila = document.createElement("li");
+          const fecha = document.createElement("time");
+          fecha.dateTime = registro.fecha;
+          fecha.textContent = fechas.format(new Date(registro.fecha));
+          const precio = document.createElement("strong");
+          precio.textContent = colones.format(registro.precio_crc);
+          if (indice === 0) fecha.append(" · Inicial");
+          fila.append(fecha, precio);
+          historial.append(fila);
+        }
+      } catch (error) {
+        cambio.classList.add("error");
+        cambio.textContent = `No se pudo cargar el historial. ${error.message}`;
+        const fila = document.createElement("li");
+        fila.textContent = cambio.textContent;
+        historial.replaceChildren(fila);
+      }
+    }
+
+    function datosFormulario(formulario) {
+      const campos = formulario.elements;
+      return {
+        marca: campos.marca.value.trim(),
+        modelo: campos.modelo.value.trim(),
+        anio: campos.anio.valueAsNumber,
+        kilometraje: campos.kilometraje.valueAsNumber,
+        precio_crc: campos.precio_crc.valueAsNumber,
+        anuncio_url: campos.anuncio_url.value.trim(),
+      };
+    }
+
+    function crearTarjeta(moto, historialAbierto) {
+      const tarjeta = plantilla.content.firstElementChild.cloneNode(true);
+      const nombre = `${moto.marca} ${moto.modelo}`;
+      const ruta = `/motos/${moto.id}`;
+      tarjeta.dataset.id = moto.id;
+      tarjeta.querySelector("h3").textContent = nombre;
+      tarjeta.querySelector(".datos").textContent =
+        `${moto.anio} · ${numeros.format(moto.kilometraje)} km`;
+      tarjeta.querySelector(".precio").textContent = colones.format(moto.precio_crc);
+      tarjeta.querySelector("details").open = historialAbierto;
+
+      const editar = tarjeta.querySelector(".editar");
+      const abrir = tarjeta.querySelector(".abrir-edicion");
+      const anuncio = tarjeta.querySelector(".anuncio");
+      if (moto.anuncio_url && /^https?:\/\//i.test(moto.anuncio_url)) {
+        anuncio.href = moto.anuncio_url;
+        anuncio.hidden = false;
+      }
+
+      editar.prepend(camposAlta.querySelector(".campos").cloneNode(true));
+      const datosOriginales = { ...moto, anuncio_url: moto.anuncio_url ?? "" };
+      abrir.setAttribute("aria-label", `Editar moto ${nombre}`);
+      editar.id = `editar-${moto.id}`;
+      abrir.setAttribute("aria-controls", editar.id);
+
+      abrir.addEventListener("click", () => {
+        editar.hidden = false;
+        abrir.hidden = true;
+        abrir.setAttribute("aria-expanded", "true");
+        for (const campo of editar.elements) {
+          if (campo.name) campo.value = datosOriginales[campo.name];
+        }
+        editar.elements.marca.focus();
+      });
+      tarjeta.querySelector(".cancelar").addEventListener("click", () => {
+        editar.hidden = true;
+        abrir.hidden = false;
+        abrir.setAttribute("aria-expanded", "false");
+        abrir.focus();
+      });
+      editar.addEventListener("submit", (evento) => {
+        evento.preventDefault();
+        const cambios = Object.fromEntries(
+          Object.entries(datosFormulario(editar)).filter(([campo, valor]) => valor !== datosOriginales[campo])
+        );
+        if (Object.keys(cambios).length === 0) {
+          tarjeta.querySelector(".cancelar").click();
+          return;
+        }
+        ejecutar(() => solicitar(ruta, "PATCH", cambios),
+          "Moto actualizada.", () => {
+            editar.hidden = true;
+            abrir.hidden = false;
+            abrir.setAttribute("aria-expanded", "false");
+          }, moto.id);
+      });
+
+      const eliminar = tarjeta.querySelector(".eliminar");
+      eliminar.setAttribute("aria-label", `Eliminar ${nombre}`);
+      eliminar.addEventListener("click", () => {
+        if (window.confirm(`¿Eliminar ${nombre} y su historial de precios?`)) {
+          ejecutar(() => solicitar(ruta, "DELETE"), "Moto eliminada.");
+        }
+      });
+      return tarjeta;
+    }
+
+    async function cargarMotos() {
+      const parametros = new URLSearchParams();
+      if (presupuesto !== "") parametros.set("precio_max", presupuesto);
+      const motos = await solicitar(parametros.size ? `/motos?${parametros}` : "/motos");
+      if (orden) motos.sort((a, b) => a[orden] - b[orden] || a.id - b.id);
+      const abiertos = new Set(
+        [...lista.querySelectorAll("details[open]")].map((detalle) => detalle.closest("li").dataset.id)
+      );
+      const tarjetas = motos.map((moto) => crearTarjeta(moto, abiertos.has(String(moto.id))));
+      lista.replaceChildren(...tarjetas);
+      motos.forEach((moto, indice) => mostrarHistorial(moto, tarjetas[indice]));
+      if (motos.length > 0) return "";
+      return presupuesto === "" ? "Todavía no hay motos guardadas." : "No hay motos dentro de ese presupuesto.";
+    }
+
+    async function ejecutar(mutacion, mensaje, alGuardar, idEditado) {
+      if (recargar.disabled) return;
+
+      avisoError.textContent = "";
+      estado.textContent = mutacion ? "Guardando cambios…" : "Cargando motos…";
+      recargar.disabled = camposAlta.disabled = camposFiltros.disabled = controlesMotos.disabled = true;
+      let guardado = false;
+      let errorVisible = false;
+
+      try {
+        if (mutacion) {
+          await mutacion();
+          guardado = true;
+          alGuardar?.();
+        }
+        const mensajeLista = await cargarMotos();
+        estado.textContent = [mensaje, mensajeLista].filter(Boolean).join(" ");
+      } catch (error) {
+        estado.textContent = guardado ? mensaje : "";
+        avisoError.textContent = guardado
+          ? `No se pudo actualizar la lista. ${error.message}`
+          : error.message;
+        errorVisible = true;
+      } finally {
+        recargar.disabled = camposAlta.disabled = camposFiltros.disabled = controlesMotos.disabled = false;
+      }
+
+      if (errorVisible) {
+        avisoError.focus();
+      } else if (idEditado !== undefined) {
+        (lista.querySelector(`[data-id="${idEditado}"] .abrir-edicion`) ?? tituloMotos).focus();
+      } else if (mutacion) {
+        tituloMotos.focus();
+      }
+    }
+
+    alta.addEventListener("submit", (evento) => {
+      evento.preventDefault();
+      const moto = datosFormulario(alta);
+      ejecutar(() => solicitar("/motos", "POST", moto), "Moto agregada.", () => alta.reset());
+    });
+
+    filtros.addEventListener("submit", (evento) => {
+      evento.preventDefault();
+      presupuesto = filtros.elements.precio_max.value;
+      orden = filtros.elements.orden.value;
+      ejecutar();
+    });
+
+    recargar.addEventListener("click", () => ejecutar());
+    ejecutar();
+  </script>
+</body>
+</html>
