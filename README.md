@@ -56,3 +56,13 @@ Para ampliar el catálogo de fotos, buscá el modelo o su código en [Wikimedia 
 | `GET /motos/{id}/precios` | Devuelve el historial, desde el primer precio registrado. |
 
 Los campos editables son `marca`, `modelo`, `anio`, `kilometraje`, `precio_crc` y `anuncio_url`. El enlace es opcional y debe usar HTTP o HTTPS. Para quitarlo, enviá `{"anuncio_url":""}` en un PATCH. Por ejemplo, `{"kilometraje":0}` guarda cero kilómetros y conserva los demás datos.
+
+## Vista previa
+
+### Motos guardadas
+
+![Tarjetas de la Honda Hornet 500 y la Honda Navi, con una bajada de ₡150.000 en la Hornet](docs/motoradar-cr.png)
+
+### Agregar una moto
+
+![Formulario para registrar una moto y su enlace al anuncio en MotoRadar CR](docs/motoradar-cr01.png)
