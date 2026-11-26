@@ -418,6 +418,8 @@ func rutas(db *sql.DB) *http.ServeMux {
 		eliminarMoto(w, r, db)
 	})
 
+	mux.Handle("GET /imagenes/", http.StripPrefix("/imagenes/", http.FileServer(http.Dir("imagenes"))))
+
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "index.html")
 	})

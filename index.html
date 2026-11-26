@@ -6,9 +6,9 @@
   <title>MotoRadar CR</title>
   <style>
     :root {
-      font: 16px/1.5 system-ui, sans-serif;
+      font: 16px/1.55 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
       color: #18291f;
-      background: #f3f6f1;
+      background: radial-gradient(ellipse at top left, #ddebe2, transparent 55rem), #f6f7f3;
       --verde: #14573e;
       --borde: #cdd8cf;
       --secundario: #486052;
@@ -16,19 +16,30 @@
     }
     * { box-sizing: border-box; }
     body { margin: 0; }
-    header { background: #123628; color: white; padding: 2.5rem 1rem; }
+    header {
+      background: linear-gradient(115deg, #102f25, #225a44);
+      color: #fffdf7;
+      padding: clamp(2.25rem, 6vw, 4rem) 1rem;
+    }
     header > div, main { width: min(70rem, 100%); margin: auto; }
     h1, h2, h3, p { margin: 0; overflow-wrap: anywhere; }
-    h1 { font-size: clamp(2rem, 5vw, 3rem); letter-spacing: -.045em; }
-    h2 { font-size: 1.4rem; }
-    h3 { font-size: 1.2rem; }
+    h1, h2, h3 {
+      font-family: "Avenir Next", Bahnschrift, "Segoe UI Variable Display", sans-serif;
+      line-height: 1.1;
+      letter-spacing: -.025em;
+    }
+    h1 { font-size: clamp(2.5rem, 6vw, 4.25rem); font-weight: 600; letter-spacing: -.045em; }
+    h2 { font-size: 1.65rem; }
+    h3 { font-size: 1.35rem; }
     main { padding: 1.5rem 1rem 3rem; }
     .panel, .moto {
       background: white;
       border: 1px solid var(--borde);
-      border-radius: 1rem;
+      border-radius: 1.15rem;
       padding: clamp(1rem, 3vw, 1.5rem);
+      box-shadow: 0 4px 16px rgb(18 54 40 / 6%);
     }
+    .panel { background: rgb(255 255 255 / 72%); }
     .campos {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
@@ -37,8 +48,11 @@
     }
     fieldset { margin: 0; padding: 0; border: 0; min-inline-size: 0; }
     label { display: grid; gap: .25rem; font-weight: 600; }
+    .selector-catalogo { display: grid; align-content: start; gap: .35rem; }
+    .selector-catalogo input { min-height: 2.25rem; font-size: .9rem; }
     input, select, button { font: inherit; border-radius: .5rem; min-height: 2.75rem; }
     input, select { width: 100%; padding: .5rem .65rem; border: 1px solid #869b8b; }
+    [data-miles] { font-variant-numeric: tabular-nums; }
     button {
       border: 1px solid var(--borde);
       padding: .5rem .85rem;
@@ -68,6 +82,18 @@
       padding: 0;
     }
     .datos, .cambio, #estado { color: var(--secundario); }
+    .referencia { margin: 0 0 .75rem; }
+    .referencia img, .sin-foto {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      border-radius: .65rem;
+      background: #edf1ec;
+    }
+    .referencia img { display: block; object-fit: contain; }
+    .sin-foto { display: grid; place-items: center; color: var(--secundario); }
+    .sin-foto > div { padding: .75rem; text-align: center; }
+    .sin-foto .galeria:not([hidden]) { display: block; margin-top: .35rem; }
+    .referencia figcaption { margin-top: .25rem; color: var(--secundario); font-size: .85rem; }
     .precio { font-size: 1.65rem; font-weight: 750; margin-top: .6rem; }
     .bajo { color: var(--verde); }
     .eliminar, .error, .subio { color: var(--rojo); }
@@ -104,11 +130,17 @@
       <form id="alta">
         <fieldset id="campos-alta" aria-labelledby="titulo-alta">
           <div class="campos">
-            <label>Marca<input name="marca" required></label>
-            <label>Modelo<input name="modelo" required></label>
+            <div class="selector-catalogo">
+              <input type="search" data-filtrar="marca" aria-label="Filtrar marcas" placeholder="Filtrar marcas">
+              <label>Marca<select name="marca" required></select></label>
+            </div>
+            <div class="selector-catalogo">
+              <input type="search" data-filtrar="modelo" aria-label="Filtrar modelos" placeholder="Filtrar modelos">
+              <label>Modelo<select name="modelo" required></select></label>
+            </div>
             <label>Año<input name="anio" type="number" min="1" step="1" required></label>
-            <label>Kilometraje (km)<input name="kilometraje" type="number" min="0" step="1" required></label>
-            <label>Precio (₡)<input name="precio_crc" type="number" min="1" step="1" required></label>
+            <label>Kilometraje (km)<input name="kilometraje" type="text" inputmode="numeric" pattern="0|[1-9][0-9]*(\.[0-9]{3})*" data-miles required></label>
+            <label>Precio (₡)<input name="precio_crc" type="text" inputmode="numeric" pattern="[1-9][0-9]*(\.[0-9]{3})*" data-miles required></label>
             <label class="enlace-campo">Enlace al anuncio (opcional)<input name="anuncio_url" type="url" placeholder="https://…"></label>
           </div>
           <button class="principal" type="submit">Guardar moto</button>
@@ -144,6 +176,13 @@
 
   <template id="plantilla-moto">
     <li class="moto">
+      <figure class="referencia">
+        <img alt="" hidden>
+        <figcaption hidden>Imagen de referencia</figcaption>
+        <div class="sin-foto">
+          <div>Sin imagen disponible <a class="galeria anuncio" target="_blank" rel="noopener noreferrer" hidden>Ver fotos en la ficha oficial</a></div>
+        </div>
+      </figure>
       <h3></h3>
       <p class="datos"></p>
       <p class="precio"></p>
@@ -249,20 +288,219 @@
       }
     }
 
+    function formatearMiles(digitos) {
+      return digitos.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    document.addEventListener("input", ({ target }) => {
+      if (!target.matches("[data-miles]")) return;
+
+      const anterior = target.value;
+      const digitos = anterior.replace(/\D/g, "");
+      const aLaDerecha = anterior.slice(target.selectionStart).replace(/\D/g, "").length;
+      const formateado = formatearMiles(digitos.replace(/^0+(?=\d)/, ""));
+      if (anterior === formateado) return;
+
+      const aLaIzquierda = Math.max(0, formateado.replace(/\./g, "").length - aLaDerecha);
+      let cursor = 0;
+      for (let vistos = 0; vistos < aLaIzquierda; cursor++) {
+        if (formateado[cursor] !== ".") vistos++;
+      }
+      target.value = formateado;
+      target.setSelectionRange(cursor, cursor);
+    });
+
+    document.addEventListener("beforeinput", (evento) => {
+      const campo = evento.target;
+      if (!campo.matches("[data-miles]") || evento.inputType !== "deleteContentForward") return;
+
+      const cursor = campo.selectionStart;
+      if (cursor === campo.selectionEnd && campo.value[cursor] === ".") {
+        campo.setSelectionRange(cursor + 1, cursor + 1);
+      }
+    });
+
     function datosFormulario(formulario) {
       const campos = formulario.elements;
       return {
-        marca: campos.marca.value.trim(),
-        modelo: campos.modelo.value.trim(),
+        marca: campos.marca.value,
+        modelo: campos.modelo.value,
         anio: campos.anio.valueAsNumber,
-        kilometraje: campos.kilometraje.valueAsNumber,
-        precio_crc: campos.precio_crc.valueAsNumber,
+        kilometraje: Number(campos.kilometraje.value.replace(/\./g, "")),
+        precio_crc: Number(campos.precio_crc.value.replace(/\./g, "")),
         anuncio_url: campos.anuncio_url.value.trim(),
       };
     }
 
+    const africa1000 = { archivo: "honda-africa-twin-1000.jpg", desde: 2016, hasta: 2019 };
+    const africa1100 = { archivo: "honda-africa-twin-1100.jpg", desde: 2020 };
+    const catalogo = [
+      { nombre: "Bajaj", modelos: [
+        { nombre: "Pulsar NS 200", alias: ["Pulsar 200 NS"], fotos: [{ archivo: "bajaj-pulsar-ns200.jpg" }] },
+      ] },
+      { nombre: "Freedom", modelos: [
+        { nombre: "ZS 200", alias: ["ZS200-7"], galeria: "https://www.motosfreedom.com/sport/zs200/" },
+      ] },
+      { nombre: "Honda", modelos: [
+        { nombre: "Africa Twin", fotos: [africa1000, africa1100] },
+        { nombre: "CRF1000L Africa Twin", alias: ["CRF1000L", "Africa Twin CRF1000L", "Africa Twin 1000"], fotos: [africa1000] },
+        { nombre: "CRF1100L Africa Twin", alias: ["CRF1100L", "Africa Twin CRF1100L", "Africa Twin 1100"], fotos: [africa1100] },
+        { nombre: "Hornet 500", alias: ["CB500 Hornet"], fotos: [
+          { archivo: "honda-hornet-500-2026.jpg", desde: 2026, hasta: 2026 },
+          { archivo: "honda-hornet-500.jpg" },
+        ] },
+        { nombre: "Navi", alias: ["Navi 100"], fotos: [{ archivo: "honda-navi.jpg" }] },
+        { nombre: "NX500", fotos: [{ archivo: "honda-nx500.jpg", desde: 2023 }] },
+      ] },
+      { nombre: "Kawasaki", modelos: [
+        { nombre: "Z 500", fotos: [{ archivo: "kawasaki-z500.jpg", desde: 2024 }] },
+      ] },
+      { nombre: "Suzuki", modelos: [
+        { nombre: "V-Strom 650", alias: ["DL650"], fotos: [{ archivo: "suzuki-v-strom-650.jpg" }] },
+      ] },
+      { nombre: "Yamaha", modelos: [
+        { nombre: "MT-03", alias: ["MT-03 FI"], fotos: [{ archivo: "yamaha-mt-03.jpg", desde: 2016 }] },
+        { nombre: "MT-07", fotos: [{ archivo: "yamaha-mt-07.jpg", desde: 2025 }] },
+      ] },
+    ];
+
+    const modelosAdicionales = {
+      "Aprilia": ["RS 660", "Tuareg 660", "Tuono 660"],
+      "Bajaj": ["Boxer BM 150", "Dominar 250", "Dominar 400", "Pulsar 150", "Pulsar N160", "Pulsar NS 125", "Pulsar NS 160", "Pulsar RS 200"],
+      "Benelli": ["302S", "Leoncino 500", "TRK 502", "TRK 502 X"],
+      "BMW": ["F 800 GS", "F 900 GS", "G 310 GS", "G 310 R", "R 1250 GS", "R 1300 GS", "S 1000 RR"],
+      "CFMOTO": ["250 NK", "300 SR", "450 MT", "450 NK", "450 SR", "650 MT", "800 MT"],
+      "Cyclone": ["RX401"],
+      "Ducati": ["DesertX", "Diavel V4", "Monster", "Multistrada V2 S", "Multistrada V4 S", "Panigale V2", "Panigale V4", "Scrambler Icon", "Streetfighter V2"],
+      "Formula": ["City 125", "Go 150", "Tekken 250", "Tekken 300"],
+      "Freedom": ["Flow 125", "HR250", "Magic 150"],
+      "Haojue": ["DR 160 S", "NK 150"],
+      "Harley-Davidson": ["Fat Boy", "Iron 883", "Nightster", "Pan America 1250", "Sportster S"],
+      "Hero": ["Hunk 150 RF", "Hunk 160R", "Xpulse 200 4V", "Xtreme 160R"],
+      "Honda": ["ADV350", "CB125F", "CB160 Hornet", "CB300R", "CB500X", "CB650R", "CB1000 Hornet", "CBR500R", "CBR650R", "CBR1000RR-R", "CRF250F", "CRF300L", "CRF300 Rally", "NC750X", "NT1100", "PCX 160", "Sahara 300", "X-ADV", "XR150L", "XR190L", "XR250 Tornado"],
+      "Husqvarna": ["Norden 901", "Norden 901 Expedition", "Svartpilen 401", "Vitpilen 401"],
+      "Kawasaki": ["KLX 150", "KLX 230", "KX 250", "Ninja 400", "Ninja 500", "Ninja 650", "Ninja ZX-6R", "Versys 300", "Versys 650", "Vulcan S", "Z 400", "Z 650", "Z 900"],
+      "Kove": ["450 Rally", "800X Pro"],
+      "KTM": ["125 Duke", "200 Duke", "250 Adventure", "250 Duke", "390 Adventure", "390 Adventure X", "390 Duke", "690 Enduro R", "790 Adventure", "890 Adventure", "990 Duke", "1290 Super Adventure S", "RC 390"],
+      "Ktna": ["Avatar 250", "BWS 150"],
+      "Kymco": ["Agility 125", "Like 150", "X-Town 300"],
+      "Loncin": ["NR300", "Super Nave"],
+      "Morbidelli": ["NZ250"],
+      "Moto Guzzi": ["V7 Stone", "V85 TT", "V100 Mandello"],
+      "Piaggio": ["Beverly 400 S", "Liberty 150"],
+      "Royal Enfield": ["Classic 350", "Continental GT 650", "Hunter 350", "Himalayan 411", "Himalayan 450", "Interceptor 650", "Meteor 350", "Super Meteor 650"],
+      "Serpento": ["Hurricane 250", "RS6 150"],
+      "Suzuki": ["Address 125", "AX100", "Burgman 125", "DR150", "DR650", "Gixxer 150", "Gixxer 250", "Gixxer SF 250", "GSX-8R", "GSX-8S", "GSX-S 1000GX", "GN125", "Hayabusa", "V-Strom 250 SX", "V-Strom 800DE"],
+      "SYM": ["Fiddle 125", "Jet 14 125"],
+      "Triumph": ["Bonneville T100", "Scrambler 400 X", "Speed 400", "Speed Triple 1200 RS", "Street Triple 765 R", "Tiger 850 Sport", "Tiger 900 GT Pro", "Tiger 1200 GT Pro", "Tiger Sport 660", "Tiger Sport 800", "Trident 660"],
+      "TVS": ["Apache RTR 160 4V", "Apache RTR 200 4V", "Apache RR 310", "NTorq 125", "Raider 125"],
+      "UM": ["XPEED 170ADV", "Xtreet RS 250"],
+      "Vespa": ["GTS 300 Super Sport", "Primavera 150", "Sprint 150"],
+      "Voge": ["300 Rally", "525 DSX", "SR3 250"],
+      "Yadea": ["EPOC"],
+      "Yamaha": ["FZ 25", "FZ-S FI", "MT-15 FI", "MT-09", "MT-10", "NMAX 155", "R3", "R7", "R15", "Tenere 700", "Tracer 9 GT+", "XTZ 125", "XTZ 150", "XTZ 250", "XMAX 300", "YZ250F", "YZ450F"],
+      "Zontes": ["ZT200-U1", "ZT350-T", "ZT703-F"],
+    };
+    for (const [nombre, modelos] of Object.entries(modelosAdicionales)) {
+      const adicionales = modelos.map((nombre) => ({ nombre }));
+      const marca = catalogo.find((marca) => marca.nombre === nombre);
+      if (marca) marca.modelos.push(...adicionales);
+      else catalogo.push({ nombre, modelos: adicionales });
+    }
+    const ordenarPorNombre = (a, b) => a.nombre.localeCompare(b.nombre, "es", { numeric: true });
+    catalogo.sort(ordenarPorNombre);
+    catalogo.forEach(({ modelos }) => modelos.sort(ordenarPorNombre));
+
+    function normalizarNombre(texto) {
+      return texto.toLowerCase().replace(/[\s\p{Dash_Punctuation}]+/gu, "");
+    }
+
+    function buscarMarca(nombre) {
+      const clave = normalizarNombre(nombre);
+      return catalogo.find((marca) => normalizarNombre(marca.nombre) === clave);
+    }
+
+    function buscarModelo(marca, nombre) {
+      if (!marca) return;
+      const clave = normalizarNombre(nombre);
+      const prefijo = normalizarNombre(marca.nombre);
+      return marca.modelos.find((modelo) => [modelo.nombre, ...(modelo.alias ?? [])].some((variante) => {
+        const normalizada = normalizarNombre(variante);
+        return clave === normalizada || clave === prefijo + normalizada;
+      }));
+    }
+
+    function configurarSelectores(formulario) {
+      const { marca, modelo } = formulario.elements;
+      const filtroMarca = formulario.querySelector('[data-filtrar="marca"]');
+      const filtroModelo = formulario.querySelector('[data-filtrar="modelo"]');
+
+      function cargarOpciones(selector, disponibles, filtro, elegido, mensaje) {
+        const consulta = normalizarNombre(filtro);
+        const opciones = disponibles.filter(({ nombre, alias = [] }) =>
+          nombre === elegido || [nombre, ...alias].some((valor) => normalizarNombre(valor).includes(consulta))
+        );
+        selector.replaceChildren(new Option(opciones.length ? mensaje : "Sin coincidencias", ""));
+        for (const { nombre } of opciones) selector.add(new Option(nombre, nombre));
+        selector.value = opciones.some(({ nombre }) => nombre === elegido) ? elegido : "";
+      }
+
+      function actualizarModelos(elegido = "") {
+        const disponibles = buscarMarca(marca.value)?.modelos ?? [];
+        filtroModelo.disabled = disponibles.length === 0;
+        if (!disponibles.length) {
+          modelo.replaceChildren(new Option("Elegí una marca primero", ""));
+          return;
+        }
+        cargarOpciones(modelo, disponibles, filtroModelo.value, elegido, "Elegí un modelo");
+      }
+
+      filtroMarca.addEventListener("input", () =>
+        cargarOpciones(marca, catalogo, filtroMarca.value, marca.value, "Elegí una marca")
+      );
+      filtroModelo.addEventListener("input", () => actualizarModelos(modelo.value));
+      marca.addEventListener("change", () => {
+        filtroModelo.value = "";
+        actualizarModelos();
+      });
+
+      return (moto) => {
+        filtroMarca.value = filtroModelo.value = "";
+        const marcaGuardada = buscarMarca(moto?.marca ?? "");
+        const modeloGuardado = buscarModelo(marcaGuardada, moto?.modelo ?? "");
+        cargarOpciones(marca, catalogo, "", marcaGuardada?.nombre, "Elegí una marca");
+        actualizarModelos(modeloGuardado?.nombre);
+      };
+    }
+
+    function mostrarReferencia(tarjeta, moto) {
+      const modelo = buscarModelo(buscarMarca(moto.marca), moto.modelo);
+      const referencia = modelo?.fotos?.find(({ desde = 1, hasta = Infinity }) =>
+        moto.anio >= desde && moto.anio <= hasta
+      );
+      if (!referencia) {
+        if (modelo?.galeria) {
+          const enlace = tarjeta.querySelector(".galeria");
+          enlace.href = modelo.galeria;
+          enlace.hidden = false;
+        }
+        return;
+      }
+
+      const foto = tarjeta.querySelector(".referencia img");
+      const leyenda = tarjeta.querySelector(".referencia figcaption");
+      const marcador = tarjeta.querySelector(".sin-foto");
+      foto.addEventListener("load", () => {
+        foto.hidden = false;
+        leyenda.hidden = false;
+        marcador.hidden = true;
+      });
+      foto.src = "/imagenes/" + referencia.archivo;
+    }
+
     function crearTarjeta(moto, historialAbierto) {
       const tarjeta = plantilla.content.firstElementChild.cloneNode(true);
+      mostrarReferencia(tarjeta, moto);
       const nombre = `${moto.marca} ${moto.modelo}`;
       const ruta = `/motos/${moto.id}`;
       tarjeta.dataset.id = moto.id;
@@ -281,6 +519,7 @@
       }
 
       editar.prepend(camposAlta.querySelector(".campos").cloneNode(true));
+      const cargarCatalogoEdicion = configurarSelectores(editar);
       const datosOriginales = { ...moto, anuncio_url: moto.anuncio_url ?? "" };
       abrir.setAttribute("aria-label", `Editar moto ${nombre}`);
       editar.id = `editar-${moto.id}`;
@@ -291,8 +530,11 @@
         abrir.hidden = true;
         abrir.setAttribute("aria-expanded", "true");
         for (const campo of editar.elements) {
-          if (campo.name) campo.value = datosOriginales[campo.name];
+          if (!campo.name || campo.name === "marca" || campo.name === "modelo") continue;
+          const valor = datosOriginales[campo.name];
+          campo.value = campo.matches("[data-miles]") ? formatearMiles(String(valor)) : valor;
         }
+        cargarCatalogoEdicion(moto);
         editar.elements.marca.focus();
       });
       tarjeta.querySelector(".cancelar").addEventListener("click", () => {
@@ -379,10 +621,15 @@
       }
     }
 
+    const cargarCatalogoAlta = configurarSelectores(alta);
+    cargarCatalogoAlta();
     alta.addEventListener("submit", (evento) => {
       evento.preventDefault();
       const moto = datosFormulario(alta);
-      ejecutar(() => solicitar("/motos", "POST", moto), "Moto agregada.", () => alta.reset());
+      ejecutar(() => solicitar("/motos", "POST", moto), "Moto agregada.", () => {
+        alta.reset();
+        cargarCatalogoAlta();
+      });
     });
 
     filtros.addEventListener("submit", (evento) => {
